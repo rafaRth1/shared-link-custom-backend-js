@@ -33,7 +33,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Directorio Publico
-app.use(express.static('/dist/public'));
+app.use(express.static('public'));
 
 const PORT = process.env.PORT || 4000;
 
@@ -41,7 +41,7 @@ app.use('/user', userRoutes);
 app.use('/bio', bioRoutes);
 
 app.get('*', (req, res) => {
-	res.sendFile(__dirname + '/dist/public/index.html');
+	res.sendFile(__dirname + '/public/index.html');
 });
 
 app.listen(PORT, () => {
