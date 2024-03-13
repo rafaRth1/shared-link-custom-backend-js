@@ -33,7 +33,11 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Directorio Publico
+<<<<<<< HEAD
 app.use(express.static('public'));
+=======
+app.use(express.static('/public'));
+>>>>>>> cac2408eff4f7f59accc25f7dc1dac5de99b067f
 
 const PORT = process.env.PORT || 4000;
 
