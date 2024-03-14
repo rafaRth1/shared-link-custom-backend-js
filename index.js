@@ -32,7 +32,7 @@ connectDB();
 
 // app.use(cors(corsOptions));
 
-app.use(cors(corsOptions));
+app.use(cors());
 
 // Directorio Publico
 app.use(express.static('public'));
