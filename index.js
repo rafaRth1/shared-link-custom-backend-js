@@ -13,26 +13,24 @@ app.use(express.json());
 
 connectDB();
 
-// Config Cors
-// const whitelist = [
-// 	process.env.FRONTEND_URL_PRD,
-// 	process.env.FRONTEND_URL_DEV,
-// 	process.env.FRONTEND_URL_PRD_TEST,
-// ];
+//Config Cors
+const whitelist = [
+	process.env.FRONTEND_URL_PRD,
+	process.env.FRONTEND_URL_DEV,
+	process.env.FRONTEND_URL_PRD_TEST,
+];
 
-// const corsOptions = {
-// 	origin: function (origin, callback) {
-// 		if (whitelist.includes(origin)) {
-// 			callback(null, true);
-// 		} else {
-// 			callback(new Error('Error de cors'));
-// 		}
-// 	},
-// };
+const corsOptions = {
+	origin: function (origin, callback) {
+		if (whitelist.includes(origin)) {
+			callback(null, true);
+		} else {
+			callback(new Error('Error de cors'));
+		}
+	},
+};
 
-// app.use(cors(corsOptions));
-
-app.use(cors());
+app.use(cors(corsOptions));
 
 // Directorio Publico
 app.use(express.static('public'));
