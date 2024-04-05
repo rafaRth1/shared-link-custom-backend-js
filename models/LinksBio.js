@@ -5,33 +5,33 @@ const LinksBioSchema = new Schema(
 	{
 		name: {
 			type: String,
-			require: String,
+			require: true,
 			trim: true,
 			unique: true,
 		},
 
 		title: {
 			type: String,
-			require: String,
+			require: true,
 			trim: true,
 			unique: true,
 		},
 
 		description: {
 			type: String,
-			require: String,
+			require: true,
 			trim: true,
 		},
 
 		imageProfile: {
 			type: String,
-			require: String,
+			require: true,
 			trim: true,
 		},
 
 		bannerImage: {
 			type: String,
-			require: String,
+			require: true,
 			trim: true,
 		},
 

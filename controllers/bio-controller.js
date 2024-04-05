@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import LinksBio from '../models/LinksBio.js';
+import ProfileMetric from '../models/ProfileMetric.js';
 
 const editValuesBio = async (req, res) => {
 	const { _id, title, description, imageProfile, bannerImage } = req.body;
@@ -90,6 +91,24 @@ const deleteLinkBio = async (req, res) => {
 	}
 };
 
+const storageViews = async (req, res) => {
+	const profileMetric = await ProfileMetric.findOne({ user: req.body.id_profile });
+
+	if (profileMetric) {
+		if (profileMetric.views.includes(req.body.id_user_browser)) {
+			return;
+		} else {
+			profileMetric.views.push(req.body.id_user_browser);
+		}
+	}
+
+	try {
+		await profileMetric.save();
+	} catch (error) {
+		console.log(error);
+	}
+};
+
 const reorderPositionLinksBio = async (req, res) => {
 	console.log(req.body);
 };
@@ -100,7 +119,15 @@ const handleUploadImage = async (req, res) => {
 	// res.json(image);
 };
 
-export { editValuesBio, addLinkBio, editLinkBio, deleteLinkBio, reorderPositionLinksBio, handleUploadImage };
+export {
+	editValuesBio,
+	addLinkBio,
+	editLinkBio,
+	deleteLinkBio,
+	reorderPositionLinksBio,
+	handleUploadImage,
+	storageViews,
+};
 
 // const userBio = await LinksBio.aggregate([
 // 	{ $match: { _id: new Types.ObjectId(req.body._id) } },

@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import LinksBio from '../models/LinksBio.js';
 import generateJWT from '../helpers/generate-jwt.js';
 import generateID from '../helpers/generate-id.js';
+import ProfileMetric from '../models/ProfileMetric.js';
 
 const registerUser = async (req, res) => {
 	const { email, nickName } = req.body;
@@ -25,11 +26,19 @@ const registerUser = async (req, res) => {
 			user: user._id,
 		});
 
+		const profileMetric = new ProfileMetric({
+			views: 0,
+			clicks: 0,
+			subscribers: 0,
+			user: user._id,
+		});
+
 		user.token = generateID();
 		user.confirm = true;
 
 		await linkBio.save();
 		await user.save();
+		await profileMetric.save();
 
 		// Send Email confirm
 		// emailRegister({
