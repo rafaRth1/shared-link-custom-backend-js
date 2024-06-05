@@ -92,20 +92,143 @@ const deleteLinkBio = async (req, res) => {
 };
 
 const storageViews = async (req, res) => {
-	const profileMetric = await ProfileMetric.findOne({ user: req.body.id_profile });
+	/*
+		id_user_browser = string;
+		id_profile = string;
+	*/
 
-	if (profileMetric) {
-		if (profileMetric.views.includes(req.body.id_user_browser)) {
-			return;
-		} else {
-			profileMetric.views.push(req.body.id_user_browser);
-		}
-	}
+	const { id_profile, id_user_browser } = req.body;
 
-	try {
-		await profileMetric.save();
-	} catch (error) {
-		console.log(error);
+	const today = new Date().toISOString().slice(0, 10);
+
+	const lastElementTotalViews = await ProfileMetric.aggregate([
+		{
+			$match: {
+				user: new Types.ObjectId(id_profile),
+			},
+		},
+		{
+			$project: {
+				lastElement: {
+					$arrayElemAt: ['$views.totalViews', -1],
+				},
+			},
+		},
+	]);
+
+	if (today !== lastElementTotalViews[0].lastElement.key.slice(0, 10)) {
+		await ProfileMetric.findOneAndUpdate(
+			{
+				user: id_profile,
+			},
+			{
+				$push: {
+					'views.totalViews': {
+						_id: new Types.ObjectId(),
+						key: new Date().toISOString(),
+						users: [],
+						value: '0',
+					},
+				},
+			}
+		);
+
+		await ProfileMetric.findOneAndUpdate(
+			{
+				user: id_profile,
+			},
+
+			[
+				{
+					$set: {
+						lastItem: { $last: '$views.totalViews' },
+						rest: { $slice: ['$views.totalViews', 0, { $subtract: [{ $size: '$views.totalViews' }, 1] }] },
+					},
+				},
+				{
+					$set: {
+						'lastItem.users': {
+							$concatArrays: [
+								{
+									$filter: {
+										input: '$lastItem.users',
+										cond: {
+											$ne: ['$$this', id_user_browser],
+										},
+									},
+								},
+								[id_user_browser],
+							],
+						},
+					},
+				},
+				{
+					$addFields: {
+						'lastItem.value': 1,
+					},
+				},
+				{
+					$set: {
+						'views.totalViews': { $concatArrays: ['$rest', ['$lastItem']] },
+						lastItem: '$$REMOVE',
+						rest: '$$REMOVE',
+					},
+				},
+			]
+		);
+	} else {
+		await ProfileMetric.findOneAndUpdate(
+			{
+				user: id_profile,
+			},
+
+			[
+				{
+					$set: {
+						lastItem: { $last: '$views.totalViews' },
+						rest: { $slice: ['$views.totalViews', 0, { $subtract: [{ $size: '$views.totalViews' }, 1] }] },
+					},
+				},
+				{
+					$addFields: {
+						'lastItem.value': {
+							$cond: {
+								if: {
+									$not: { $in: [id_user_browser, '$lastItem.users'] },
+								},
+								then: lastElementTotalViews[0].lastElement.value + 1,
+								else: lastElementTotalViews[0].lastElement.value,
+							},
+						},
+					},
+				},
+				{
+					$set: {
+						'lastItem.users': {
+							$concatArrays: [
+								{
+									$filter: {
+										input: '$lastItem.users',
+										cond: {
+											$ne: ['$$this', id_user_browser],
+										},
+									},
+								},
+								[id_user_browser],
+							],
+						},
+					},
+				},
+
+				{
+					$set: {
+						'views.totalViews': { $concatArrays: ['$rest', ['$lastItem']] },
+						lastItem: '$$REMOVE',
+						rest: '$$REMOVE',
+					},
+				},
+			]
+		);
 	}
 };
 
@@ -119,15 +242,7 @@ const handleUploadImage = async (req, res) => {
 	// res.json(image);
 };
 
-export {
-	editValuesBio,
-	addLinkBio,
-	editLinkBio,
-	deleteLinkBio,
-	reorderPositionLinksBio,
-	handleUploadImage,
-	storageViews,
-};
+export { editValuesBio, addLinkBio, editLinkBio, deleteLinkBio, reorderPositionLinksBio, handleUploadImage, storageViews };
 
 // const userBio = await LinksBio.aggregate([
 // 	{ $match: { _id: new Types.ObjectId(req.body._id) } },

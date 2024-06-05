@@ -2,8 +2,15 @@ import { Schema, model } from 'mongoose';
 
 const ProfileMetricSchema = new Schema({
 	views: {
-		type: Array,
-		require: true,
+		totalViews: [
+			{
+				key: String,
+				value: Number,
+				users: Array,
+			},
+		],
+
+		total: Number,
 	},
 
 	clicks: {
