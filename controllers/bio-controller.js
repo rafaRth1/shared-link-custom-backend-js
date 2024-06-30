@@ -91,6 +91,16 @@ const deleteLinkBio = async (req, res) => {
 	}
 };
 
+const reorderPositionLinksBio = async (req, res) => {
+	console.log(req.params);
+};
+
+const handleUploadImage = async (req, res) => {
+	console.log(req.body);
+	// const image = await Image.create(req.body);
+	// res.json(image);
+};
+
 const storageViews = async (req, res) => {
 	/*
 		id_user_browser = string;
@@ -126,147 +136,169 @@ const storageViews = async (req, res) => {
 					'views.totalViews': {
 						_id: new Types.ObjectId(),
 						key: new Date().toISOString(),
-						users: [],
 						value: '0',
 					},
 				},
 			}
 		);
+	}
 
-		await ProfileMetric.findOneAndUpdate(
+	await ProfileMetric.findOneAndUpdate(
+		{
+			user: id_profile,
+		},
+		[
 			{
-				user: id_profile,
-			},
-
-			[
-				{
-					$set: {
-						lastItem: { $last: '$views.totalViews' },
-						rest: { $slice: ['$views.totalViews', 0, { $subtract: [{ $size: '$views.totalViews' }, 1] }] },
-					},
+				$set: {
+					lastItem: { $last: '$views.totalViews' },
+					rest: { $slice: ['$views.totalViews', 0, { $subtract: [{ $size: '$views.totalViews' }, 1] }] },
 				},
-				{
-					$set: {
-						'lastItem.users': {
-							$concatArrays: [
-								{
-									$filter: {
-										input: '$lastItem.users',
-										cond: {
-											$ne: ['$$this', id_user_browser],
-										},
-									},
-								},
-								[id_user_browser],
-							],
+			},
+			{
+				$addFields: {
+					'views.total': {
+						$cond: {
+							if: {
+								$in: ['5010064645373612500053736', '$views.users'],
+							},
+							then: '$views.total',
+							else: { $add: ['$views.total', 1] },
 						},
 					},
 				},
-				{
-					$addFields: {
-						'lastItem.value': 1,
-					},
-				},
-				{
-					$set: {
-						'views.totalViews': { $concatArrays: ['$rest', ['$lastItem']] },
-						lastItem: '$$REMOVE',
-						rest: '$$REMOVE',
-					},
-				},
-			]
-		);
-	} else {
-		await ProfileMetric.findOneAndUpdate(
-			{
-				user: id_profile,
 			},
-
-			[
-				{
-					$set: {
-						lastItem: { $last: '$views.totalViews' },
-						rest: { $slice: ['$views.totalViews', 0, { $subtract: [{ $size: '$views.totalViews' }, 1] }] },
+			{
+				$addFields: {
+					'lastItem.value': {
+						$cond: {
+							if: {
+								$not: { $in: [id_user_browser, '$views.users'] },
+							},
+							then: lastElementTotalViews[0].lastElement.value + 1,
+							else: lastElementTotalViews[0].lastElement.value,
+						},
 					},
 				},
-				{
-					$addFields: {
-						'lastItem.value': {
-							$cond: {
-								if: {
-									$not: { $in: [id_user_browser, '$lastItem.users'] },
+			},
+			{
+				$set: {
+					'views.users': {
+						$concatArrays: [
+							{
+								$filter: {
+									input: '$views.users',
+									cond: {
+										$ne: ['$$this', id_user_browser],
+									},
 								},
-								then: lastElementTotalViews[0].lastElement.value + 1,
-								else: lastElementTotalViews[0].lastElement.value,
+							},
+							[id_user_browser],
+						],
+					},
+				},
+			},
+			{
+				$set: {
+					'views.totalViews': { $concatArrays: ['$rest', ['$lastItem']] },
+					lastItem: '$$REMOVE',
+					rest: '$$REMOVE',
+				},
+			},
+		]
+	);
+};
+
+const getProfileMetric = async (req, res) => {
+	/**
+		start: "2024-06-08T00:00:00.000Z", string
+    	end" "2024-06-01T00:00:00.000Z", string
+    	user: "66080176496404d19d48ae8b" string
+	 */
+
+	const { user, start, end } = req.body;
+
+	const profileMetric = await ProfileMetric.aggregate([
+		{
+			$match: {
+				user: new Types.ObjectId(user),
+			},
+		},
+		{
+			$project: {
+				totalViews: {
+					list: {
+						$filter: {
+							input: '$views.totalViews',
+							as: 'item',
+							cond: {
+								$and: [{ $gte: ['$$item.key', new Date(end)] }, { $lte: ['$$item.key', new Date(start)] }],
 							},
 						},
 					},
+					total: '$views.total',
 				},
-				{
-					$set: {
-						'lastItem.users': {
-							$concatArrays: [
-								{
-									$filter: {
-										input: '$lastItem.users',
-										cond: {
-											$ne: ['$$this', id_user_browser],
-										},
-									},
-								},
-								[id_user_browser],
-							],
+
+				totalClicks: {
+					list: {
+						$filter: {
+							input: '$views.totalViews',
+							as: 'item',
+							cond: {
+								$and: [{ $gte: ['$$item.key', new Date(end)] }, { $lte: ['$$item.key', new Date(start)] }],
+							},
+						},
+					},
+					total: '$views.total',
+				},
+			},
+		},
+	]);
+
+	res.json({ profileMetric: profileMetric[0] });
+};
+
+const getProfileMetricWithDate = async (req, res) => {
+	/*
+    	start: "2024-06-08T00:00:00.000Z", string
+    	end" "2024-06-01T00:00:00.000Z", string
+    	user: "66080176496404d19d48ae8b" string
+	*/
+
+	const { user, start, end } = req.body;
+
+	const profileMetric = await ProfileMetric.aggregate([
+		{
+			$match: {
+				user: new Types.ObjectId(user),
+			},
+		},
+
+		{
+			$project: {
+				'data.totalViews': {
+					$filter: {
+						input: '$views.totalViews',
+						as: 'item',
+						cond: {
+							$and: [{ $gte: ['$$item.key', new Date(end)] }, { $lte: ['$$item.key', new Date(start)] }],
 						},
 					},
 				},
+			},
+		},
+	]);
 
-				{
-					$set: {
-						'views.totalViews': { $concatArrays: ['$rest', ['$lastItem']] },
-						lastItem: '$$REMOVE',
-						rest: '$$REMOVE',
-					},
-				},
-			]
-		);
-	}
+	res.json({ profileMetric });
 };
 
-const reorderPositionLinksBio = async (req, res) => {
-	console.log(req.body);
+export {
+	editValuesBio,
+	addLinkBio,
+	editLinkBio,
+	deleteLinkBio,
+	reorderPositionLinksBio,
+	handleUploadImage,
+	storageViews,
+	getProfileMetric,
+	getProfileMetricWithDate,
 };
-
-const handleUploadImage = async (req, res) => {
-	console.log(req.body);
-	// const image = await Image.create(req.body);
-	// res.json(image);
-};
-
-export { editValuesBio, addLinkBio, editLinkBio, deleteLinkBio, reorderPositionLinksBio, handleUploadImage, storageViews };
-
-// const userBio = await LinksBio.aggregate([
-// 	{ $match: { _id: new Types.ObjectId(req.body._id) } },
-// 	{
-// 		$set: { 'links.url': req.body.url },
-// 	},
-// 	{
-// 		$project: {
-// 			links: {
-// 				$filter: {
-// 					input: '$links',
-// 					cond: { $eq: ['$$this._id', new Types.ObjectId(req.body.idLink)] },
-// 				},
-// 			},
-// 		},
-// 	},
-
-// 	{
-// 		$replaceRoot: {
-// 			newRoot: {
-// 				$arrayElemAt: ['$links', 0],
-// 			},
-// 		},
-// 	},
-// ]).then((res: any) => {
-// 	console.log(res);
-// });

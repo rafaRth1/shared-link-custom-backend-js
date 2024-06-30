@@ -1,0 +1,67 @@
+// const userBio = await LinksBio.aggregate([
+// 	{ $match: { _id: new Types.ObjectId(req.body._id) } },
+// 	{
+// 		$set: { 'links.url': req.body.url },
+// 	},
+// 	{
+// 		$project: {
+// 			links: {
+// 				$filter: {
+// 					input: '$links',
+// 					cond: { $eq: ['$$this._id', new Types.ObjectId(req.body.idLink)] },
+// 				},
+// 			},
+// 		},
+// 	},
+
+// 	{
+// 		$replaceRoot: {
+// 			newRoot: {
+// 				$arrayElemAt: ['$links', 0],
+// 			},
+// 		},
+// 	},
+// ]).then((res: any) => {
+// 	console.log(res);
+// });
+
+// Change types
+// update({},
+// 	[
+// 	  {
+// 		 "$set": {
+// 			"views.totalViews": {
+// 			  "$map": {
+// 				 "input": "$views.totalViews",
+// 				 "as": "item",
+// 				 "in": {
+// 					"$cond": [
+// 					  {
+// 						 "$eq": [
+// 							{
+// 							  "$type": "$$item.key"
+// 							},
+// 							"string"
+// 						 ]
+// 					  },
+// 					  {
+// 						 "$mergeObjects": [
+// 							"$$item",
+// 							{
+// 							  "key": {
+// 								 "$toDate": "$$item.key"
+// 							  }
+// 							}
+// 						 ]
+// 					  },
+// 					  "$$item"
+// 					]
+// 				 }
+// 			  }
+// 			}
+// 		 }
+// 	  }
+// 	],
+// 	{
+// 	  "multi": true
+// 	})

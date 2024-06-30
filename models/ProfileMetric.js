@@ -4,12 +4,12 @@ const ProfileMetricSchema = new Schema({
 	views: {
 		totalViews: [
 			{
-				key: String,
+				key: Date,
 				value: Number,
-				users: Array,
 			},
 		],
 
+		users: Array,
 		total: Number,
 	},
 
