@@ -14,12 +14,12 @@ import {
 
 const router = express.Router();
 
+router.post('/link', checkAuth, addLinkBio);
+router.route('/link/:id').put(checkAuth, editLinkBio).delete(checkAuth, deleteLinkBio);
+router.put('/edit-bio', checkAuth, editValuesBio);
 router.post('/profile-metric', getProfileMetric);
 router.post('/profile-metric-activity', getProfileMetricWithDate);
 router.post('/profile-view', storageViews);
-router.put('/edit-bio', checkAuth, editValuesBio);
-router.post('/add-link', checkAuth, addLinkBio);
-router.post('/edit-link', checkAuth, editLinkBio);
 router.put('/reorder-link', reorderPositionLinksBio);
 
 export default router;

@@ -3,8 +3,10 @@ import LinksBio from '../models/LinksBio.js';
 import ProfileMetric from '../models/ProfileMetric.js';
 
 const editValuesBio = async (req, res) => {
-	const { _id, title, description, imageProfile, bannerImage } = req.body;
-	const userBio = await LinksBio.findById({ _id }).select('-createdAt -updatedAt -__v -updatedAt');
+	const { title, description, imageProfile, bannerImage } = req.body;
+	const userBio = await LinksBio.findOne({ user: new Types.ObjectId(req.user._id) }).select(
+		'-createdAt -updatedAt -__v -updatedAt'
+	);
 
 	if (!userBio) {
 		const error = new Error('No encontrado');
@@ -28,8 +30,8 @@ const editValuesBio = async (req, res) => {
 };
 
 const addLinkBio = async (req, res) => {
-	const { idBio, url, customName, platformName, position } = req.body;
-	const userBio = await LinksBio.findById({ _id: idBio });
+	const { url, customName, platformName, position } = req.body;
+	const userBio = await LinksBio.findOne({ user: new Types.ObjectId(req.user._id) });
 	const link = await userBio?.links.create({ url, customName, platformName, position: position });
 
 	userBio?.links.push(link);
@@ -44,22 +46,20 @@ const addLinkBio = async (req, res) => {
 	} catch (error) {
 		console.log(error);
 	}
-
-	console.log(link);
 };
 
 const editLinkBio = async (req, res) => {
 	const userBio = await LinksBio.findOneAndUpdate(
 		{
-			_id: new Types.ObjectId(req.body._id),
-			'links._id': new Types.ObjectId(req.body.idLink),
+			user: new Types.ObjectId(req.user._id),
+			'links._id': new Types.ObjectId(req.params.id),
 		},
 		{
 			$set: { 'links.$.url': req.body.url, 'links.$.customName': req.body.custonName },
 		},
 
 		{
-			projection: { links: { $elemMatch: { _id: new Types.ObjectId(req.body.idLink) } }, _id: 0 },
+			projection: { links: { $elemMatch: { _id: new Types.ObjectId(req.params.id) } }, _id: 0 },
 			returnDocument: 'after',
 			returnNewDocument: true,
 		}
@@ -76,7 +76,7 @@ const editLinkBio = async (req, res) => {
 };
 
 const deleteLinkBio = async (req, res) => {
-	const userBio = await LinksBio.findById({ _id: req.body.idLinkBio });
+	const userBio = await LinksBio.findOne({ user: new Types.ObjectId(req.user._id) });
 
 	userBio?.links.pull(req.params.id);
 
@@ -126,7 +126,7 @@ const storageViews = async (req, res) => {
 		},
 	]);
 
-	if (today !== lastElementTotalViews[0].lastElement.key.slice(0, 10)) {
+	if (today !== lastElementTotalViews[0].lastElement.key.toString().slice(0, 10)) {
 		await ProfileMetric.findOneAndUpdate(
 			{
 				user: id_profile,
